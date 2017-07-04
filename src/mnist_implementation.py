@@ -29,13 +29,6 @@ class Mnist_Network(object):
             # the feedforward function uses the simple sigmoid(w.x +b) formula
             value = sigmoid(numpy.dot(weight, value) + bias)
         return value
-    
-    def sigmoid(function_val):
-        return 1.0/(1.0 + numpy.exp(-function_val))
-    
-    # derivative of the sigmoid function
-    def sigmoid_derivative(derivative_input):
-        return sigmoid(derivative_input) * (1 - sigmoid(derivative_input))
 
     def train(self, training_data, epochs, mini_batch_size, eta):
         # function to train the neural network using a mini-batch stochastic
@@ -70,10 +63,9 @@ class Mnist_Network(object):
             change_weight = [nw + dw for nw,dw in zip(change_weight, delta_weight)]
 
         self.biases = [bias - (eta/len(mini_batch)) * nb
-                        for bias, nb in zip(selg.biases, change_bias)]
+                        for bias, nb in zip(self.biases, change_bias)]
         self.weights = [weight - (eta/len(mini_batch)) * nw 
                         for weight, nw in zip(self.weights, change_weight)]
-
     
     def backpropagation(self, x, y):
         # function returns a tuple that contains the gradient for the cost
@@ -88,15 +80,15 @@ class Mnist_Network(object):
         activations = [x] # list to store all the activations, layer by layer
         zs = [] # list to store all the z vectors, layer by layer
         for b, w in zip(self.biases, self.weights):
-            z = np.dot(w, activation)+b
+            z = numpy.dot(w, activation)+b
             zs.append(z)
             activation = sigmoid(z)
             activations.append(activation)
         # backward pass
         delta = self.cost_derivative(activations[-1], y) * \
-            sigmoid_prime(zs[-1])
+            sigmoid_derivative(zs[-1])
         change_bias[-1] = delta
-        change_weight[-1] = np.dot(delta, activations[-2].transpose())
+        change_weight[-1] = numpy.dot(delta, activations[-2].transpose())
         # Note that the variable l in the loop below is used a little
         # differently to the notation in Chapter 2 of the book. Here,
         # l = 1 means the last layer of neurons, l = 2 is the
@@ -105,12 +97,20 @@ class Mnist_Network(object):
         # that Python can use negative indices in lists.
         for l in xrange(2, self.num_layers):
             z = zs[-l]
-            sp = sigmoid_prime(z)
-            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
+            sp = sigmoid_derivative(z)
+            delta = numpy.dot(self.weights[-l+1].transpose(), delta) * sp
             change_bias[-l] = delta
-            change_weight[-l] = np.dot(delta, activations[-l-1].transpose())
+            change_weight[-l] = numpy.dot(delta, activations[-l-1].transpose())
         return (change_bias, change_weight)
         """ end of verbose copy"""
-    
 
+    def cost_derivative(self, output_activations, y):
+        # return vector of partial derivatives
+        return (output_activations - y)
     
+def sigmoid(function_val):
+    return 1.0/(1.0 + numpy.exp(-function_val))
+
+# derivative of the sigmoid function
+def sigmoid_derivative(derivative_input):
+    return sigmoid(derivative_input) * (1 - sigmoid(derivative_input))
