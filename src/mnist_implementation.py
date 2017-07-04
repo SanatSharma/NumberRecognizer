@@ -30,10 +30,12 @@ class Mnist_Network(object):
             value = sigmoid(numpy.dot(weight, value) + bias)
         return value
 
-    def train(self, training_data, epochs, mini_batch_size, eta):
+    def train(self, training_data, epochs, mini_batch_size, eta, test_data = None):
         # function to train the neural network using a mini-batch stochastic
         # gradient descent. training data is a list of tuples with training data and 
         # wanted output.
+        if test_data: 
+            n_test = len(test_data)
         training_data_length = len(training_data)
         # for every epoch, generate mini-batches and train on them
         for i in xrange(epochs):
@@ -46,7 +48,12 @@ class Mnist_Network(object):
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
             
-            print "Epoch {0} completed".format(i)
+            if test_data:
+                result = self.eval(test_data)
+                print "Epoch {0}: {1} / {2}, {3}% accuracy".format(
+                    i, result, n_test, ((result*1.0/n_test)*100))
+            else:
+                print "Epoch {0} completed".format(i)
 
     def update_mini_batch(self, mini_batch, eta):
         # update the weights and biases for the next layer by applying
@@ -107,6 +114,11 @@ class Mnist_Network(object):
     def cost_derivative(self, output_activations, y):
         # return vector of partial derivatives
         return (output_activations - y)
+    
+    def eval(self, test_data):
+        test_results = [(numpy.argmax(self.feedforward(x)), y) 
+                        for (x,y) in test_data]
+        return sum(int(x==y) for (x,y) in test_results)
     
 def sigmoid(function_val):
     return 1.0/(1.0 + numpy.exp(-function_val))
